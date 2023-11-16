@@ -23,12 +23,35 @@ def bakeries():
     bakeries = [bakery.to_dict() for bakery in Bakery.query.all()]
     return make_response(  bakeries,   200  )
 
-@app.route('/bakeries/<int:id>')
+@app.route('/bakeries/<int:id>', methods=['GET', 'PATCH'])
 def bakery_by_id(id):
-
     bakery = Bakery.query.filter_by(id=id).first()
-    bakery_serialized = bakery.to_dict()
-    return make_response ( bakery_serialized, 200  )
+
+    if request.method == 'GET':
+        return bakery.to_dict(), 200
+    else:
+        bakery.name = request.form.get('name')
+        db.session.commit()
+        return bakery.to_dict(), 200
+
+@app.route('/baked_goods', methods=['POST'])
+def create_baked_good():
+    try:
+        data = dict(request.form)
+        new_bg = BakedGood(**data)
+        db.session.add(new_bg)
+        db.session.commit()
+        return new_bg.to_dict(), 201
+    except:
+        db.session.rollback()
+        return {'error': 'Failed to post baked good'}
+
+@app.route('/baked_goods/<int:id>', methods=['DELETE'])
+def baked_goods_by_id(id):
+    old_bg = db.session.get(BakedGood, id)
+    db.session.delete(old_bg)
+    db.session.commit()
+    return {}, 200
 
 @app.route('/baked_goods/by_price')
 def baked_goods_by_price():
